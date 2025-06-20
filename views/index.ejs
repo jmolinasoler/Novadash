@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Core Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Bitcoin Core Node Dashboard</h1>
+
+        <% if (error) { %>
+            <div class="card error">
+                <h2>Connection Error</h2>
+                <pre><%= error %></pre>
+            </div>
+        <% } else { %>
+            <!-- General Info Section -->
+            <div class="grid">
+                <div class="card">
+                    <h2>Blockchain Info</h2>
+                    <p><strong>Chain:</strong> <%= blockchainInfo.chain %></p>
+                    <p><strong>Blocks:</strong> <%= blockchainInfo.blocks.toLocaleString() %></p>
+                    <p><strong>Headers:</strong> <%= blockchainInfo.headers.toLocaleString() %></p>
+                    <p><strong>Difficulty:</strong> <%= parseFloat(blockchainInfo.difficulty).toExponential(4) %></p>
+                    <p><strong>Verification:</strong> <%= (blockchainInfo.verificationprogress * 100).toFixed(2) %>%</p>
+                    <p><strong>Pruned:</strong> <%= blockchainInfo.pruned %></p>
+                </div>
+                <div class="card">
+                    <h2>Network Info</h2>
+                    <p><strong>Version:</strong> <%= networkInfo.subversion %></p>
+                    <p><strong>Connections:</strong> <%= networkInfo.connections_in %> in / <%= networkInfo.connections_out %> out</p>
+                    <p><strong>Total Connections:</strong> <%= networkInfo.connections %></p>
+                    <p><strong>Local Services:</strong> <%= networkInfo.localservicesnames.join(', ') %></p>
+                    <p><strong>Time Offset:</strong> <%= networkInfo.timeoffset %>s</p>
+                </div>
+                <div class="card">
+                    <h2>Mempool Info</h2>
+                    <p><strong>Transactions:</strong> <%= mempoolInfo.size.toLocaleString() %></p>
+                    <p><strong>Usage:</strong> <%= (mempoolInfo.usage / 1024 / 1024).toFixed(2) %> MB</p>
+                    <p><strong>Max Mempool:</strong> <%= (mempoolInfo.maxmempool / 1024 / 1024).toFixed(2) %> MB</p>
+                    <p><strong>Min Fee (sat/vB):</strong> <%= (mempoolInfo.mempoolminfee * 100000).toFixed(2) %></p>
+                </div>
+            </div>
+
+            <!-- Lookup Section -->
+            <div class="grid">
+                <div class="card">
+                    <h2>Lookup Block</h2>
+                    <form action="/block" method="POST">
+                        <input type="text" name="blockhash" placeholder="Enter Block Hash" required>
+                        <button type="submit">Find Block</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Lookup Transaction</h2>
+                    <form action="/tx" method="POST">
+                        <input type="text" name="txid" placeholder="Enter Transaction ID (TXID)" required>
+                        <button type="submit">Find Transaction</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Details Section -->
+            <% if (blockDetails) { %>
+                <div class="card details">
+                    <h2>Block Details: <small><%= blockDetails.hash.substring(0, 20) %>...</small></h2>
+                    <pre><code><%= JSON.stringify(blockDetails, null, 2) %></code></pre>
+                </div>
+            <% } %>
+
+            <% if (txDetails) { %>
+                <div class="card details">
+                    <h2>Transaction Details: <small><%= txDetails.txid.substring(0, 20) %>...</small></h2>
+                    <pre><code><%= JSON.stringify(txDetails, null, 2) %></code></pre>
+                </div>
+            <% } %>
+
+        <% } %>
+    </div>
+</body>
+</html>
