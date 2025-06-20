@@ -19,8 +19,8 @@
  1.  Clone the repository:
  
      ```bash
-     git clone <repository_url>
-     cd novadashboard
+     git clone https://github.com/jmolinasoler/Novadash.git
+     cd Novadashboard
      ```
  
  2.  Install dependencies:
