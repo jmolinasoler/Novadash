@@ -1,6 +1,6 @@
  # Novadashboard
  
- This project is a simple web dashboard created to help me study and understand the Bitcoin protocol. It interacts directly with a running `bitcoin-core` node, using it as a reference implementation to explore blockchain data, network status, and transaction handling.
+ This project is a simple web dashboard created to help me study and understand the Bitcoin protocol. It interacts directly with a running `bitcoind` or `bitcoin-qt` node, using it as a reference implementation to explore blockchain data, network status, and transaction handling.
  
  ## Features
  
