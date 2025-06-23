@@ -1,17 +1,18 @@
  # Novadashboard
  
- A simple web dashboard to monitor a Bitcoin Core node using Node.js and the `bitcoin-core` library.
+ This project is a simple web dashboard created to help me study and understand the Bitcoin protocol. It interacts directly with a running `bitcoin-core` node, using it as a reference implementation to explore blockchain data, network status, and transaction handling.
  
  ## Features
  
  *   Displays general information about the Bitcoin blockchain, network, and mempool.
- *   Allows users to look up blocks by hash.
+ *   Shows the latest blocks and the current top transactions in the mempool.
+ *   Allows users to look up blocks by hash (including a shortcut for the Genesis Block).
  *   Allows users to look up transactions by ID (TXID).
  
  ## Requirements
  
  *   Node.js and npm installed.
- *   A running Bitcoin Core node with RPC enabled.
+ *   A running Bitcoin Core node. This application is designed to connect to your own node to display its data. RPC must be enabled in your `bitcoin.conf` file.
  *   RPC credentials (username and password) from your `bitcoin.conf` file.
  
  ## Installation

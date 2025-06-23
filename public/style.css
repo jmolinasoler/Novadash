@@ -85,7 +85,18 @@ button:hover {
     background-color: #0056b3;
 }
 
+.secondary-button {
+    margin-top: 10px;
+    background-color: #6c757d;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
+}
+
 .details {
+    /* This class is for block/tx details, not for the error modal anymore */
+    position: relative; /* For positioning the close button */
     grid-column: 1 / -1; /* Span full width */
 }
 
@@ -97,4 +108,75 @@ pre {
     overflow-x: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+/* Close button for details cards (block/tx) */
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    text-decoration: none;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+    align-items: center; /* Center content vertically */
+    justify-content: center; /* Center content horizontally */
+}
+
+/* Modal Content/Box */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto; /* Auto margins for centering */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%; /* Make it wider */
+    max-width: 90%; /* Allow it to expand significantly */
+    height: 90%; /* Give it a significant height */
+    max-height: 90%; /* Prevent it from exceeding viewport height */
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    animation-name: animatetop;
+    animation-duration: 0.4s;
+    position: relative; /* For close button positioning */
+    overflow: auto; /* Enable scrolling for content within the modal */
+}
+
+/* Add Animation */
+@-webkit-keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+@keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+/* Ensure error card styling applies to modal content */
+.modal-content.card.error {
+    background-color: #FFBABA;
+    color: #D8000C;
+    border: 1px solid #D8000C; /* Add a border for better visual separation */
+}
+
+.modal-content.card.error h2 {
+    color: #D8000C;
 }

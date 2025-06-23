@@ -10,12 +10,88 @@
     <div class="container">
         <h1>Bitcoin Core Node Dashboard</h1>
 
-        <% if (error) { %>
-            <div class="card error">
-                <h2>Connection Error</h2>
-                <pre><%= error %></pre>
+        <% if (!error) { %> <%# Only render dashboard content if no critical error %>
+            <!-- Latest Blocks and Mempool Content Section (Side-by-Side) -->
+            <div class="grid">
+                <% if (latestBlocks && latestBlocks.length > 0) { %>
+                    <div class="card">
+                        <h2>Latest Blocks <small>(Last 20)</small></h2>
+                        <table class="mempool-table">
+                            <thead>
+                                <tr>
+                                    <th>Height</th>
+                                    <th>Hash</th>
+                                    <th>Transactions</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% latestBlocks.forEach(block => { %>
+                                    <tr>
+                                        <td><%= block.height.toLocaleString() %></td>
+                                        <td class="txid-cell">
+                                            <a href="#" title="<%= block.hash %>" onclick="event.preventDefault(); document.querySelector('input[name=blockhash]').value='<%= block.hash %>'; document.querySelector('form[action=\'/block\']').submit();">
+                                                <%= block.hash.substring(0, 10) %>...<%= block.hash.substring(block.hash.length - 10) %>
+                                            </a>
+                                        </td>
+                                        <td><%= block.nTx.toLocaleString() %></td>
+                                        <td><%= new Date(block.time * 1000).toLocaleTimeString() %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+
+                <% if (mempoolTransactions && mempoolTransactions.length > 0) { %>
+                    <div class="card">
+                        <h2>Mempool Transactions <small>(Top 20 by Fee Rate)</small></h2>
+                        <table class="mempool-table">
+                            <thead>
+                                <tr>
+                                    <th>TXID</th>
+                                    <th>Fee Rate (sat/vB)</th>
+                                    <th>Size (vB)</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% mempoolTransactions.forEach(tx => { %>
+                                    <tr>
+                                        <td class="txid-cell">
+                                            <a href="#" title="<%= tx.txid %>" onclick="event.preventDefault(); document.querySelector('input[name=txid]').value='<%= tx.txid %>'; document.querySelector('form[action=\'/tx\']').submit();">
+                                                <%= tx.txid.substring(0, 10) %>...<%= tx.txid.substring(tx.txid.length - 10) %>
+                                            </a>
+                                        </td>
+                                        <td><%= tx.feeRate.toFixed(2) %></td>
+                                        <td><%= tx.vsize.toLocaleString() %></td>
+                                        <td><%= new Date(tx.time * 1000).toLocaleTimeString() %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
             </div>
-        <% } else { %>
+            <!-- Lookup Section -->
+            <div class="grid">
+                <div class="card">
+                    <h2>Lookup Block</h2>
+                    <form action="/block" method="POST">
+                        <input type="text" name="blockhash" placeholder="Enter Block Hash" required>
+                        <button type="submit">Find Block</button>
+                        <button type="button" class="secondary-button" onclick="lookupGenesisBlock()">Show Genesis Block</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Lookup Transaction</h2>
+                    <form action="/tx" method="POST">
+                        <input type="text" name="txid" placeholder="Enter Transaction ID (TXID)" required>
+                        <button type="submit">Find Transaction</button>
+                    </form>
+                </div>
+            </div>
+            <!-- Details Section -->
             <!-- General Info Section -->
             <div class="grid">
                 <div class="card">
@@ -43,41 +119,98 @@
                     <p><strong>Min Fee (sat/vB):</strong> <%= (mempoolInfo.mempoolminfee * 100000).toFixed(2) %></p>
                 </div>
             </div>
+            
+            
 
-            <!-- Lookup Section -->
-            <div class="grid">
-                <div class="card">
-                    <h2>Lookup Block</h2>
-                    <form action="/block" method="POST">
-                        <input type="text" name="blockhash" placeholder="Enter Block Hash" required>
-                        <button type="submit">Find Block</button>
-                    </form>
-                </div>
-                <div class="card">
-                    <h2>Lookup Transaction</h2>
-                    <form action="/tx" method="POST">
-                        <input type="text" name="txid" placeholder="Enter Transaction ID (TXID)" required>
-                        <button type="submit">Find Transaction</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Details Section -->
-            <% if (blockDetails) { %>
-                <div class="card details">
-                    <h2>Block Details: <small><%= blockDetails.hash.substring(0, 20) %>...</small></h2>
-                    <pre><code><%= JSON.stringify(blockDetails, null, 2) %></code></pre>
-                </div>
-            <% } %>
-
-            <% if (txDetails) { %>
-                <div class="card details">
-                    <h2>Transaction Details: <small><%= txDetails.txid.substring(0, 20) %>...</small></h2>
-                    <pre><code><%= JSON.stringify(txDetails, null, 2) %></code></pre>
-                </div>
-            <% } %>
-
-        <% } %>
+        <% } %> <%# End of if (!error) %>
     </div>
+
+    <!-- Block Details Modal Structure -->
+    <div id="blockDetailsModalOverlay" class="modal-overlay">
+        <div class="modal-content card details">
+            <a href="/" class="close-button" title="Close" onclick="closeBlockDetailsModal()">&times;</a>
+            <h2>Block Details: <small id="blockDetailsHash"></small></h2>
+            <pre><code id="blockDetailsContent"></code></pre>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal Structure -->
+    <div id="txDetailsModalOverlay" class="modal-overlay">
+        <div class="modal-content card details">
+            <a href="/" class="close-button" title="Close" onclick="closeTxDetailsModal()">&times;</a>
+            <h2>Transaction Details: <small id="txDetailsTxid"></small></h2>
+            <pre><code id="txDetailsContent"></code></pre>
+        </div>
+    </div>
+
+    <!-- Error Modal Structure (always in DOM, hidden by default) -->
+    <div id="errorModalOverlay" class="modal-overlay">
+        <div class="modal-content card error">
+            <a href="#" class="close-button" title="Close" onclick="closeErrorModal()">&times;</a>
+            <h2>Connection Error</h2>
+            <pre id="errorModalMessage"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Data passed from server for details
+        const blockDetails = <%- JSON.stringify(blockDetails || null) %>;
+        const txDetails = <%- JSON.stringify(txDetails || null) %>;
+
+        // Function to handle Genesis Block lookup
+        function lookupGenesisBlock() {
+            const genesisHash = '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f';
+            const blockHashInput = document.querySelector('input[name=blockhash]');
+            const blockForm = document.querySelector('form[action=\'/block\']');
+            blockHashInput.value = genesisHash;
+            blockForm.submit();
+        }
+
+        // Function to close the error modal (and redirect to home)
+        // Function to close the error modal
+        function closeErrorModal() {
+            document.getElementById('errorModalOverlay').style.display = 'none';
+            window.location.href = '/'; // Redirect to home page
+        }
+
+        // Functions to open/close Block Details Modal
+        function openBlockDetailsModal(details) {
+            document.getElementById('blockDetailsHash').textContent = details.hash.substring(0, 20) + '...';
+            document.getElementById('blockDetailsContent').textContent = JSON.stringify(details, null, 2);
+            document.getElementById('blockDetailsModalOverlay').style.display = 'flex';
+        }
+
+        function closeBlockDetailsModal() {
+            document.getElementById('blockDetailsModalOverlay').style.display = 'none';
+            window.location.href = '/'; // Redirect to home page
+        }
+
+        // Functions to open/close Transaction Details Modal
+        function openTxDetailsModal(details) {
+            document.getElementById('txDetailsTxid').textContent = details.txid.substring(0, 20) + '...';
+            document.getElementById('txDetailsContent').textContent = JSON.stringify(details, null, 2);
+            document.getElementById('txDetailsModalOverlay').style.display = 'flex';
+        }
+
+        function closeTxDetailsModal() {
+            document.getElementById('txDetailsModalOverlay').style.display = 'none';
+            window.location.href = '/'; // Redirect to home page
+        }
+
+        // Check if an error message was passed from the server and show the modal
+        <% if (error) { %>
+            document.getElementById('errorModalMessage').textContent = `<%= error %>`;
+            document.getElementById('errorModalOverlay').style.display = 'flex'; // Use flex for centering the modal
+        <% } %>
+
+        // Check if blockDetails or txDetails were passed and show respective modals
+        if (blockDetails) {
+            openBlockDetailsModal(blockDetails);
+        }
+
+        if (txDetails) {
+            openTxDetailsModal(txDetails);
+        }
+    </script>
 </body>
 </html>
