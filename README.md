@@ -50,6 +50,10 @@
  
  2.  Open your web browser and go to `http://localhost:3000`.
  
+ ## Troubleshooting
+ 
+ If you encounter issues connecting to your Bitcoin Core node, please refer to the TROUBLESHOOTING.md guide for common solutions.
+ 
  ## Development
  
  To run the application in development mode:
