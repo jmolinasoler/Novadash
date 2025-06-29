@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin Core Dashboard</title>
+    <title>NovaDashboard</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        .refresh-toggle {
+            text-align: right;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>NovaDashboard</h1>
-
+        <div class="refresh-toggle">
+            <label for="autoRefresh">Auto-refresh every 5s:</label>
+            <input type="checkbox" id="autoRefresh" checked>
+        </div>
         <% if (!error) { %> <%# Only render dashboard content if no critical error %>
             <!-- Latest Blocks and Mempool Content Section (Side-by-Side) -->
             <div class="grid">
@@ -25,7 +34,7 @@
                                     <th>Time</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="latest-blocks-body">
                                 <% latestBlocks.forEach(block => { %>
                                     <tr>
                                         <td><%= block.height.toLocaleString() %></td>
@@ -55,7 +64,7 @@
                                     <th>Time</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="mempool-txs-body">
                                 <% mempoolTransactions.forEach(tx => { %>
                                     <tr>
                                         <td class="txid-cell">
@@ -96,11 +105,11 @@
             <div class="grid">
                 <div class="card">
                     <h2>Blockchain Info</h2>
-                    <p><strong>Chain:</strong> <%= blockchainInfo.chain %></p>
-                    <p><strong>Blocks:</strong> <%= blockchainInfo.blocks.toLocaleString() %></p>
-                    <p><strong>Headers:</strong> <%= blockchainInfo.headers.toLocaleString() %></p>
-                    <p><strong>Difficulty:</strong> <%= parseFloat(blockchainInfo.difficulty).toExponential(4) %></p>
-                    <p><strong>Verification:</strong> <%= (blockchainInfo.verificationprogress * 100).toFixed(2) %>%</p>
+                    <p><strong>Chain:</strong> <span id="info-chain"><%= blockchainInfo.chain %></span></p>
+                    <p><strong>Blocks:</strong> <span id="info-blocks"><%= blockchainInfo.blocks.toLocaleString() %></span></p>
+                    <p><strong>Headers:</strong> <span id="info-headers"><%= blockchainInfo.headers.toLocaleString() %></span></p>
+                    <p><strong>Difficulty:</strong> <span id="info-difficulty"><%= parseFloat(blockchainInfo.difficulty).toExponential(4) %></span></p>
+                    <p><strong>Verification:</strong> <span id="info-verification"><%= (blockchainInfo.verificationprogress * 100).toFixed(2) %></span>%</p>
                     <p><strong>Pruned:</strong> <%= blockchainInfo.pruned %></p>
                 </div>
                 <div class="card">
@@ -113,10 +122,10 @@
                 </div>
                 <div class="card">
                     <h2>Mempool Info</h2>
-                    <p><strong>Transactions:</strong> <%= mempoolInfo.size.toLocaleString() %></p>
-                    <p><strong>Usage:</strong> <%= (mempoolInfo.usage / 1024 / 1024).toFixed(2) %> MB</p>
-                    <p><strong>Max Mempool:</strong> <%= (mempoolInfo.maxmempool / 1024 / 1024).toFixed(2) %> MB</p>
-                    <p><strong>Min Fee (sat/vB):</strong> <%= (mempoolInfo.mempoolminfee * 100000).toFixed(2) %></p>
+                    <p><strong>Transactions:</strong> <span id="mempool-tx-count"><%= mempoolInfo.size.toLocaleString() %></span></p>
+                    <p><strong>Usage:</strong> <span id="mempool-usage"><%= (mempoolInfo.usage / 1024 / 1024).toFixed(2) %></span> MB</p>
+                    <p><strong>Max Mempool:</strong> <span id="max-mempool"><%= (mempoolInfo.maxmempool / 1024 / 1024).toFixed(2) %></span> MB</p>
+                    <p><strong>Min Fee (sat/vB):</strong> <span id="min-fee"><%= (mempoolInfo.mempoolminfee * 100000).toFixed(2) %></span></p>
                 </div>
             </div>
             
@@ -210,6 +219,95 @@
 
         if (txDetails) {
             openTxDetailsModal(txDetails);
+        }
+
+        // --- Auto-Refresh Logic ---
+        const autoRefreshCheckbox = document.getElementById('autoRefresh');
+        let refreshIntervalId = null;
+
+        function updateBlocksTable(blocks) {
+            const tbody = document.getElementById('latest-blocks-body');
+            if (!tbody) return;
+            tbody.innerHTML = ''; // Clear existing rows
+            blocks.forEach(block => {
+                const row = `
+                    <tr>
+                        <td>${block.height.toLocaleString()}</td>
+                        <td class="txid-cell">
+                            <a href="#" title="${block.hash}" onclick="event.preventDefault(); document.querySelector('input[name=blockhash]').value='${block.hash}'; document.querySelector('form[action=\\'/block\\']').submit();">
+                                ${block.hash.substring(0, 10)}...${block.hash.substring(block.hash.length - 10)}
+                            </a>
+                        </td>
+                        <td>${block.nTx.toLocaleString()}</td>
+                        <td>${new Date(block.time * 1000).toLocaleTimeString()}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function updateMempoolTable(txs) {
+            const tbody = document.getElementById('mempool-txs-body');
+            if (!tbody) return;
+            tbody.innerHTML = ''; // Clear existing rows
+            txs.forEach(tx => {
+                const row = `
+                    <tr>
+                        <td class="txid-cell">
+                            <a href="#" title="${tx.txid}" onclick="event.preventDefault(); document.querySelector('input[name=txid]').value='${tx.txid}'; document.querySelector('form[action=\\'/tx\\']').submit();">
+                                ${tx.txid.substring(0, 10)}...${tx.txid.substring(tx.txid.length - 10)}
+                            </a>
+                        </td>
+                        <td>${tx.feeRate.toFixed(2)}</td>
+                        <td>${tx.vsize.toLocaleString()}</td>
+                        <td>${new Date(tx.time * 1000).toLocaleTimeString()}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function updateStats(blockchainInfo, mempoolInfo) {
+            document.getElementById('info-blocks').textContent = blockchainInfo.blocks.toLocaleString();
+            document.getElementById('info-headers').textContent = blockchainInfo.headers.toLocaleString();
+            document.getElementById('info-difficulty').textContent = parseFloat(blockchainInfo.difficulty).toExponential(4);
+            document.getElementById('info-verification').textContent = (blockchainInfo.verificationprogress * 100).toFixed(2);
+            document.getElementById('mempool-tx-count').textContent = mempoolInfo.size.toLocaleString();
+            document.getElementById('mempool-usage').textContent = (mempoolInfo.usage / 1024 / 1024).toFixed(2);
+            document.getElementById('min-fee').textContent = (mempoolInfo.mempoolminfee * 100000).toFixed(2);
+        }
+
+        async function fetchAndUpdateData() {
+            try {
+                const response = await fetch('/api/update');
+                if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+                const data = await response.json();
+                updateBlocksTable(data.latestBlocks);
+                updateMempoolTable(data.mempoolTransactions);
+                updateStats(data.blockchainInfo, data.mempoolInfo);
+            } catch (error) {
+                console.error('Auto-refresh failed:', error);
+                stopAutoRefresh();
+                autoRefreshCheckbox.checked = false;
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshIntervalId === null) {
+                fetchAndUpdateData(); // Initial fetch
+                refreshIntervalId = setInterval(fetchAndUpdateData, 5000);
+            }
+        }
+
+        function stopAutoRefresh() {
+            clearInterval(refreshIntervalId);
+            refreshIntervalId = null;
+        }
+
+        autoRefreshCheckbox.addEventListener('change', (e) => e.target.checked ? startAutoRefresh() : stopAutoRefresh());
+
+        if (autoRefreshCheckbox.checked) {
+            startAutoRefresh();
         }
     </script>
 </body>
