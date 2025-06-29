@@ -108,7 +108,7 @@
                     <p><strong>Chain:</strong> <span id="info-chain"><%= blockchainInfo.chain %></span></p>
                     <p><strong>Blocks:</strong> <span id="info-blocks"><%= blockchainInfo.blocks.toLocaleString() %></span></p>
                     <p><strong>Headers:</strong> <span id="info-headers"><%= blockchainInfo.headers.toLocaleString() %></span></p>
-                    <p><strong>Difficulty:</strong> <span id="info-difficulty"><%= parseFloat(blockchainInfo.difficulty).toExponential(4) %></span></p>
+                    <p><strong>Difficulty:</strong> <span id="info-difficulty"><%= blockchainInfo.difficulty %></span></p>
                     <p><strong>Verification:</strong> <span id="info-verification"><%= (blockchainInfo.verificationprogress * 100).toFixed(2) %></span>%</p>
                     <p><strong>Pruned:</strong> <%= blockchainInfo.pruned %></p>
                 </div>
@@ -221,6 +221,10 @@
             openTxDetailsModal(txDetails);
         }
 
+        // Format the initial difficulty value on page load
+        const initialDifficultyElem = document.getElementById('info-difficulty');
+        initialDifficultyElem.textContent = formatDifficulty(initialDifficultyElem.textContent);
+
         // --- Auto-Refresh Logic ---
         const autoRefreshCheckbox = document.getElementById('autoRefresh');
         let refreshIntervalId = null;
@@ -267,10 +271,25 @@
             });
         }
 
+        /**
+         * Formats a large number into a human-readable string with metric prefixes (T, G, M, K).
+         * @param {number|string} difficulty The number to format.
+         * @returns {string} The formatted string.
+         */
+        function formatDifficulty(difficulty) {
+            const d = parseFloat(difficulty);
+            if (d >= 1e15) { return (d / 1e15).toFixed(2) + ' P'; } // Peta
+            if (d >= 1e12) { return (d / 1e12).toFixed(2) + ' T'; } // Tera
+            if (d >= 1e9)  { return (d / 1e9).toFixed(2)  + ' G'; } // Giga
+            if (d >= 1e6)  { return (d / 1e6).toFixed(2)  + ' M'; } // Mega
+            if (d >= 1e3)  { return (d / 1e3).toFixed(2)  + ' K'; } // Kilo
+            return d.toLocaleString('en-US');
+        }
+
         function updateStats(blockchainInfo, mempoolInfo) {
             document.getElementById('info-blocks').textContent = blockchainInfo.blocks.toLocaleString();
             document.getElementById('info-headers').textContent = blockchainInfo.headers.toLocaleString();
-            document.getElementById('info-difficulty').textContent = parseFloat(blockchainInfo.difficulty).toExponential(4);
+            document.getElementById('info-difficulty').textContent = formatDifficulty(blockchainInfo.difficulty);
             document.getElementById('info-verification').textContent = (blockchainInfo.verificationprogress * 100).toFixed(2);
             document.getElementById('mempool-tx-count').textContent = mempoolInfo.size.toLocaleString();
             document.getElementById('mempool-usage').textContent = (mempoolInfo.usage / 1024 / 1024).toFixed(2);
