@@ -11,4 +11,7 @@ router.post('/block', dashboardController.lookupBlock);
 // Route to handle transaction lookup
 router.post('/tx', dashboardController.lookupTx);
 
+// API route for dynamic updates
+router.get('/api/update', dashboardController.getApiUpdate);
+
 module.exports = router;

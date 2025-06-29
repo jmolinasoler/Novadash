@@ -83,8 +83,24 @@ const lookupTx = async (req, res) => {
     }
 };
 
+/**
+ * Provides latest blocks and mempool data as a JSON API endpoint for polling.
+ */
+const getApiUpdate = async (req, res) => {
+    try {
+        const data = await bitcoin.getDynamicData();
+        res.json(data);
+    } catch (error) {
+        console.error("Error fetching API update:", error.message);
+        res.status(500).json({
+            error: 'Failed to fetch update from Bitcoin Core.'
+        });
+    }
+};
+
 module.exports = {
     showDashboard,
     lookupBlock,
     lookupTx,
+    getApiUpdate,
 };

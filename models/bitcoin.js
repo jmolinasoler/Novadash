@@ -80,6 +80,34 @@ async function getDashboardData(numItemsToFetch = 20) {
 }
 
 /**
+ * Fetches data that is updated frequently (blocks, mempool, and basic chain info).
+ * This is a lighter version of getDashboardData for API polling.
+ * @param {number} numItemsToFetch The number of items to fetch for blocks and mempool.
+ * @returns {Promise<Object>} A promise that resolves to the dynamic data.
+ */
+async function getDynamicData(numItemsToFetch = 20) {
+    const [blockchainInfo, mempoolInfo, rawMempoolContent] = await Promise.all([
+        client.getBlockchainInfo(),
+        client.getMempoolInfo(),
+        client.getRawMempool(true)
+    ]);
+
+    const mempoolTransactions = Object.entries(rawMempoolContent)
+        .map(([txid, details]) => ({
+            txid,
+            feeRate: (details.fees.base * 100000000) / details.vsize,
+            vsize: details.vsize,
+            time: details.time
+        }))
+        .sort((a, b) => b.feeRate - a.feeRate)
+        .slice(0, numItemsToFetch);
+
+    const latestBlocks = await fetchLatestBlocks(blockchainInfo.blocks, numItemsToFetch);
+
+    return { latestBlocks, mempoolTransactions, blockchainInfo, mempoolInfo };
+}
+
+/**
  * Fetches a full block by its hash.
  * @param {string} hash The block hash.
  * @returns {Promise<Object>} A promise that resolves to the full block object.
@@ -101,6 +129,7 @@ async function getRawTransaction(txid) {
 
 module.exports = {
     getDashboardData,
+    getDynamicData,
     getBlock,
     getRawTransaction,
 };
