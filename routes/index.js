@@ -1,17 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const dashboardController = require('../controllers/dashboardController');
+import express from 'express';
 
-// Main dashboard route
-router.get('/', dashboardController.showDashboard);
+export const createRoutes = (dashboardController) => {
+    const router = express.Router();
 
-// Route to handle block lookup
-router.post('/block', dashboardController.lookupBlock);
+    router.get('/', (req, res) => dashboardController.showDashboard(req, res));
+    router.post('/lookup-block', (req, res) => dashboardController.lookupBlock(req, res));
+    router.post('/lookup-tx', (req, res) => dashboardController.lookupTx(req, res));
+    router.get('/api/update', (req, res) => dashboardController.getApiUpdate(req, res));
 
-// Route to handle transaction lookup
-router.post('/tx', dashboardController.lookupTx);
-
-// API route for dynamic updates
-router.get('/api/update', dashboardController.getApiUpdate);
-
-module.exports = router;
+    return router;
+};
